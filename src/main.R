@@ -69,7 +69,7 @@ Q.pu.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pu_yc.nc")) # Assu
 # components entering river via baseflow (this part would not be seen without tracking)
 BF.pg.mm = raster(file.path(p, "climatology/wbm_baseflow_mm_pg_yc.nc"))
 BF.ps.mm = raster(file.path(p, "climatology/wbm_baseflow_mm_ps_yc.nc"))
-
+ 
 # convert baseflow from mm/day to m3/s
 
 
