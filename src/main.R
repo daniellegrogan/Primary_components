@@ -57,10 +57,12 @@ Q.yc = raster(file.path(p, "climatology/wbm_discharge_yc.nc"))
 Q.pr.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pr_yc.nc"))
 Q.pr.frac = Q.pr.m3s/Q.yc
 Q.not_rain.frac = 1 - Q.pr.frac
+
+png("figures/Q_not_rain.png")
 plot(Q.not_rain.frac)
+dev.off()
 
 # 2. % global Q not rain, how it would look without tracking
-
 # components in the river
 Q.pg.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pg_yc.nc"))
 Q.ps.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_ps_yc.nc"))
@@ -69,9 +71,36 @@ Q.pu.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pu_yc.nc")) # Assu
 # components entering river via baseflow (this part would not be seen without tracking)
 BF.pg.mm = raster(file.path(p, "climatology/wbm_baseflow_mm_pg_yc.nc"))
 BF.ps.mm = raster(file.path(p, "climatology/wbm_baseflow_mm_ps_yc.nc"))
- 
-# convert baseflow from mm/day to m3/s
+BF.pr.mm = raster(file.path(p, "climatology/wbm_baseflow_mm_pr_yc.nc"))
+BF.mm    = raster(file.path(p, "climatology/wbm_baseflow_yc.nc"))
+BF.pr.frac = BF.pr.mm/BF.mm
+BF.not_rain.frac = 1 - BF.pr.frac
 
+png("figures/Baseflow_not_rain.png")
+plot(BF.not_rain.frac)
+dev.off()
+
+# convert baseflow from mm to m3/s
+# mm x (m/mm) x (m2/km2) x (km2 cell area) x (day/sec) = m3/sec
+m_per_mm = 0.001
+m2_per_km2 = 1e6
+day_per_sec = 1/86400
+
+BF.m3s = BF.mm * m_per_mm * m2_per_km2 * cell.area * day_per_sec
+
+plot(BF.m3s/Q.yc)
+
+BF.not_rain.m3s = BF.m3s * BF.not_rain.frac
+Q.BF_not_rain.frac = BF.not_rain.m3s/Q.yc
+plot(Q.BF_not_rain.frac)
+
+coastline = readOGR("/net/home/eos/dgrogan/git_repos/Glacier_ag/data/land-polygons-generalized-3857/", layer = "land_polygons_z4")
+coastline = spTransform(coastline, crs(Q.yc))
+
+png("figures/Q_fraction_not_rain_NoTracking.png")
+plot(Q.BF_not_rain.frac)
+plot(coastline, add=T, lwd=0.5)
+dev.off()
 
 # 3. Largest contributor to Q, recharge, and human water use (a) with tracking, (b) without tracking
 # 4. Bar chart: global water resources by source (a) with tracking, (b) without tracking
