@@ -7,6 +7,7 @@ library(raster)
 rasterOptions(tmpdir = "/net/usr/spool/")   # set alternative /tmp directory
 library(rgdal)
 library(rgeos)
+library(RColorBrewer)
 
 ### Source functions from other github repos:
 # wbm_load()
@@ -112,5 +113,103 @@ dev.off()
 # 1. % global Q NOT rain
 
 
+#######################################################################################################################################
+# global figures for N-SLCT
+Q.yc = raster(file.path(p, "climatology/wbm_discharge_yc.nc"))
+Q.pg.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pg_yc.nc"))
+irr.pg = raster(file.path(p, "climatology/wbm_GrossIrr_mm_pg_yc.nc"))*365
+irr.pu  = raster(file.path(p, "climatology/wbm_GrossIrr_mm_pu_yc.nc"))*365
+ugw = raster(file.path(p, "climatology/wbm_irrigationExtra_yc.nc"))*365
+Q.pu.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pu_yc.nc"))
+glMelt = raster(file.path(p, "climatology/wbm_glMelt_yc.nc"))
+plot(glMelt > 0)
+plot(Q.pg.m3s, add=T)
+plot(irr.pg, add=T)
+
+coastline = spTransform(coastline, crs(Q.yc))
+coastline = crop(coastline, extent(Q.yc))
+
+glacier.icemelt   = glMelt
+glacier.icemelt[glacier.icemelt == 0] = NA
+GrossIrr.pgi      = irr.pg
+discharge.pgi     = Q.pg.m3s
+
+discharge.pgi[discharge.pgi < 1] = c(NA) # lower limit on discharge; else it covers all areas and other display items
+GrossIrr.pgi[GrossIrr.pgi < 0.01] = c(NA) # lower limit on discharge; else it covers all areas and other display items
+
+# color scales 
+purples<-colorRampPalette(c(brewer.pal(n=9, name='Purples')))(100)
+p1 = purples[30:100]
+
+greens<-colorRampPalette(c(brewer.pal(n=9,name='Greens')))(100)
+g1 = greens[20:100]
+
+blues2<-colorRampPalette(c("cadetblue2", "dodgerblue1", "dodgerblue2", "dodgerblue3", "dodgerblue4"))(100)
 
 
+png("figures/Global_glacier_tracking.png",
+    height=8, width=12, units = 'in', res=300)
+par(mar=c(7, 4, 0.5, 0.5))
+#plot(coastline.shadow,  xlim = xl, ylim = yl, border='grey90', lwd=4)
+plot(coastline, border='grey70', col='white',  lwd=1)
+plot(GrossIrr.pgi,      add=T, col = g1,     legend=F, bty='n', box=F, axes=F)
+plot(discharge.pgi,     add=T, col = blues2, legend=F, bty='n', box=F, axes=F)
+plot(glacier.icemelt>0,   add=T, col = p1,     legend=F,          box=F, axes=T, las=1)
+#plot(basins, xlim = xl, ylim = yl, add=T,  lwd=0.8, border='grey15')
+
+plot(discharge.pgi, add=T, col = blues2, box=F, axes=T, las=1,
+     legend.only=T, legend.width=0.4, horizontal=T, 
+     smallplot=c(0.32, 0.62, 0.07, 0.09),
+     axis.args=list(cex.axis=0.8),
+     legend.args=list(text='Glacier ice melt in discharge (m3/s)', side=3, font=1, line=0.05, cex=0.8))
+
+plot(GrossIrr.pgi, add=T, col = g1, box=F, axes=T, las=1,
+     legend.only=T, legend.width=0.4, horizontal=T, 
+     smallplot=c(0.67, 0.97, 0.07, 0.09),
+     axis.args=list(cex.axis=0.8),
+     legend.args=list(text='Glacier ice melt in irrigation (mm/year)', side=3, font=1, line=0.05, cex=0.8))
+
+dev.off()
+
+
+
+
+#######
+
+ugw[ugw == 0] = NA
+GrossIrr.pgu      = irr.pu
+discharge.pgu     = Q.pu.m3s
+
+discharge.pgu[discharge.pgu < 5] = c(NA) # lower limit on discharge; else it covers all areas and other display items
+GrossIrr.pgu[GrossIrr.pgu < 0.01] = c(NA) # lower limit on discharge; else it covers all areas and other display items
+
+
+png("figures/Global_UGW_tracking.png",
+    height=8, width=12, units = 'in', res=300)
+par(mar=c(7, 4, 0.5, 0.5))
+#plot(coastline.shadow,  xlim = xl, ylim = yl, border='grey90', lwd=4)
+plot(coastline, border='grey70', col='white',  lwd=1)
+plot(ugw,   add=T, col = p1,     legend=F,          box=F, axes=T, las=1)
+plot(GrossIrr.pgu,      add=T, col = g1,     legend=F, bty='n', box=F, axes=F)
+plot(discharge.pgu,     add=T, col = blues2, legend=F, bty='n', box=F, axes=F)
+#plot(basins, xlim = xl, ylim = yl, add=T,  lwd=0.8, border='grey15')
+
+# plot(ugw,    add=T, col = p1, box=F, axes=T, las=1,
+#      legend.only=T, legend.width=0.4, horizontal=T, 
+#      smallplot=c(0.02, 0.28, 0.07, 0.09),
+#      axis.args=list(cex.axis=0.8),
+#      legend.args=list(text='Unsust. Groundwater (mm/year)', side=3, font=1, line=0.05, cex=0.8))
+
+plot(discharge.pgu, add=T, col = blues2, box=F, axes=T, las=1,
+     legend.only=T, legend.width=0.4, horizontal=T, 
+     smallplot=c(0.32, 0.62, 0.07, 0.09),
+     axis.args=list(cex.axis=0.8),
+     legend.args=list(text='Unsust. Groundwater in discharge (m3/s)', side=3, font=1, line=0.05, cex=0.8))
+
+plot(GrossIrr.pgu, add=T, col = g1, box=F, axes=T, las=1,
+     legend.only=T, legend.width=0.4, horizontal=T, 
+     smallplot=c(0.67, 0.97, 0.07, 0.09),
+     axis.args=list(cex.axis=0.8),
+     legend.args=list(text='Unsust. Groundwater in irrigation (mm/year)', side=3, font=1, line=0.05, cex=0.8))
+
+dev.off()
