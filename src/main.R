@@ -31,7 +31,6 @@ eval(parse(text=create_dir.script))
 
 # Basin IDs
 basin.id = raster("/net/nfs/zero/data3/WBM_TrANS/data/flowdirection602_IDs.asc")
-
 # countries
 countries = readOGR("/net/nfs/squam/raid/userdata/dgrogan/data/map_data/FAOCountryBoundaries2012/", "Adm012p")
 
@@ -45,6 +44,10 @@ ibt = subset(ibt, is.na(ibt$STN6.From.Latitude)  == F)
 ibt = subset(ibt, is.na(ibt$STN6.From.Longitude) == F)
 coordinates(ibt) = ~ STN6.From.Longitude + STN.From.Latitude
 
+# coastline
+coastline = readOGR("/net/home/eos/dgrogan/git_repos/Glacier_ag/data/land-polygons-generalized-3857/", layer = "land_polygons_z4")
+coastline = spTransform(coastline, crs(countries))
+
 # cell area
 cell.area = raster::area(raster("/net/nfs/zero/data3/WBM_TrANS/data/flowdirection602.ascii"))
 #######################################################################################################################################
@@ -56,7 +59,50 @@ p = "/net/nfs/squam/raid/data/WBM_TrANS/WBM_OpenSource/Primary_components"
 # 1. % global Q NOT rain
 Q.yc = raster(file.path(p, "climatology/wbm_discharge_yc.nc"))
 Q.pr.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pr_yc.nc"))
+Q.ps.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_ps_yc.nc"))
+Q.pg.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pg_yc.nc"))
+Q.pu.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pu_yc.nc"))
+
 Q.pr.frac = Q.pr.m3s/Q.yc
+Q.ps.frac = Q.ps.m3s/Q.yc
+Q.pg.frac = Q.pg.m3s/Q.yc
+Q.pu.frac = Q.pu.m3s/Q.yc
+
+plot(Q.pr.frac)
+plot(Q.ps.frac)
+plot(Q.pg.frac)
+plot(Q.pu.frac)
+
+blues <-colorRampPalette(c(brewer.pal(n=9, name='Blues')))(100)
+png("figures/Q_ps_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(Q.ps.m3s, col=blues, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+bupu <-colorRampPalette(c(brewer.pal(n=9, name='BuPu')))(100)
+png("figures/Q_pg_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(Q.pg.frac, col=bupu, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+greens <-colorRampPalette(c(brewer.pal(n=9, name='Greens')))(100)
+png("figures/Q_pu_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(Q.pu.frac, col=greens, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+ylorbr <-colorRampPalette(c(brewer.pal(n=9, name='YlOrBr')))(100)
+png("figures/Q_pr_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(Q.pr.frac, col=ylorbr, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+
+
 Q.not_rain.frac = 1 - Q.pr.frac
 
 png("figures/Q_not_rain.png")
@@ -95,12 +141,23 @@ BF.not_rain.m3s = BF.m3s * BF.not_rain.frac
 Q.BF_not_rain.frac = BF.not_rain.m3s/Q.yc
 plot(Q.BF_not_rain.frac)
 
-coastline = readOGR("/net/home/eos/dgrogan/git_repos/Glacier_ag/data/land-polygons-generalized-3857/", layer = "land_polygons_z4")
-coastline = spTransform(coastline, crs(Q.yc))
-
 png("figures/Q_fraction_not_rain_NoTracking.png")
 plot(Q.BF_not_rain.frac)
 plot(coastline, add=T, lwd=0.5)
+dev.off()
+
+greens <-colorRampPalette(c(brewer.pal(n=9, name='Greens')))(100)
+png("figures/Baseflow_not_rain_NoTracking.png",
+    height=8, width=12, units = 'in', res=300)
+plot(BF.not_rain.frac, col=greens, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+
+png("figures/Q_fraction_not_rain_NoTracking.png",
+    height=8, width=12, units = 'in', res=300)
+plot(Q.BF_not_rain.frac, col=greens, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
 dev.off()
 
 # 3. Largest contributor to Q, recharge, and human water use (a) with tracking, (b) without tracking
