@@ -54,7 +54,7 @@ cell.area = raster::area(raster("/net/nfs/zero/data3/WBM_TrANS/data/flowdirectio
 
 # Analyses:
 
-p = "/net/nfs/squam/raid/data/WBM_TrANS/WBM_OpenSource/Primary_components"
+p = "/net/nfs/squam/raid/data/WBM_TrANS/WBM_OpenSource/Primary_components_v3"
 
 # 1. % global Q NOT rain
 Q.yc = raster(file.path(p, "climatology/wbm_discharge_yc.nc"))
@@ -63,6 +63,7 @@ Q.ps.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_ps_yc.nc"))
 Q.pg.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pg_yc.nc"))
 Q.pu.m3s = raster(file.path(p, "climatology/wbm_discharge_m3s_pu_yc.nc"))
 
+Q.yc[Q.yc < 1] = NA
 Q.pr.frac = Q.pr.m3s/Q.yc
 Q.ps.frac = Q.ps.m3s/Q.yc
 Q.pg.frac = Q.pg.m3s/Q.yc
@@ -73,14 +74,21 @@ plot(Q.ps.frac)
 plot(Q.pg.frac)
 plot(Q.pu.frac)
 
+plot(Q.pr.m3s)
+plot(Q.ps.m3s)
+plot(Q.pg.m3s)
+plot(Q.pu.m3s)
+
 blues <-colorRampPalette(c(brewer.pal(n=9, name='Blues')))(100)
+Q.ps.frac[Q.ps.frac == 0] = NA
 png("figures/Q_ps_fraction.png",
     height=8, width=12, units = 'in', res=300)
-plot(Q.ps.m3s, col=blues, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(Q.ps.frac, col=blues, box=F, axes=T, las=1, ylim=c(-51,90))
 plot(coastline, border='grey50', lwd=1, add=T)
 dev.off()
 
 bupu <-colorRampPalette(c(brewer.pal(n=9, name='BuPu')))(100)
+Q.pg.frac[Q.pg.frac == 0] = NA
 png("figures/Q_pg_fraction.png",
     height=8, width=12, units = 'in', res=300)
 plot(Q.pg.frac, col=bupu, box=F, axes=T, las=1, ylim=c(-51,90))
@@ -88,6 +96,7 @@ plot(coastline, border='grey50', lwd=1, add=T)
 dev.off()
 
 greens <-colorRampPalette(c(brewer.pal(n=9, name='Greens')))(100)
+Q.pu.frac[Q.pu.frac == 0] = NA
 png("figures/Q_pu_fraction.png",
     height=8, width=12, units = 'in', res=300)
 plot(Q.pu.frac, col=greens, box=F, axes=T, las=1, ylim=c(-51,90))
@@ -95,6 +104,7 @@ plot(coastline, border='grey50', lwd=1, add=T)
 dev.off()
 
 ylorbr <-colorRampPalette(c(brewer.pal(n=9, name='YlOrBr')))(100)
+Q.pr.frac[Q.pr.frac == 0] = NA
 png("figures/Q_pr_fraction.png",
     height=8, width=12, units = 'in', res=300)
 plot(Q.pr.frac, col=ylorbr, box=F, axes=T, las=1, ylim=c(-51,90))
@@ -153,7 +163,7 @@ plot(BF.not_rain.frac, col=greens, box=F, axes=T, las=1, ylim=c(-51,90))
 plot(coastline, border='grey50', lwd=1, add=T)
 dev.off()
 
-
+Q.BF_not_rain.frac[Q.BF_not_rain.frac==0]=NA
 png("figures/Q_fraction_not_rain_NoTracking.png",
     height=8, width=12, units = 'in', res=300)
 plot(Q.BF_not_rain.frac, col=greens, box=F, axes=T, las=1, ylim=c(-51,90))
@@ -167,8 +177,65 @@ dev.off()
 # 7. Point extraction: show source of water at inter-basin transfer donor locations
 
 #######################################################################################################################################
-# 1. % global Q NOT rain
+# Largest contributor to Q
 
+Q_fracs = stack(Q.pr.frac, Q.ps.frac, Q.pg.frac, Q.pu.frac)
+Q_max_layers = whiches.max(Q_fracs)
+
+terrain.colors(4, alpha=1)
+brewer.pal(5, "Set1")
+
+png("figures/Q_main_source.png",
+    height=8, width=12, units = 'in', res=300)
+plot(Q_max_layers, col = c("darkorange", "dodgerblue", "darkolivegreen", "purple"), box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+
+# Largest contributor to irrigation
+irr.yc = raster(file.path(p, "climatology/wbm_irrigationGross_yc.nc"))
+irr.pr.mm = raster(file.path(p, "climatology/wbm_GrossIrr_mm_pr_yc.nc"))
+irr.ps.mm = raster(file.path(p, "climatology/wbm_GrossIrr_mm_ps_yc.nc"))
+irr.pg.mm = raster(file.path(p, "climatology/wbm_GrossIrr_mm_pg_yc.nc"))
+irr.pu.mm = raster(file.path(p, "climatology/wbm_GrossIrr_mm_pu_yc.nc"))
+
+irr.yc[irr.yc < 1] = NA
+irr.pr.frac = irr.pr.mm/irr.yc
+irr.ps.frac = irr.ps.mm/irr.yc
+irr.pg.frac = irr.pg.mm/irr.yc
+irr.pu.frac = irr.pu.mm/irr.yc
+
+blues <-colorRampPalette(c(brewer.pal(n=9, name='Blues')))(100)
+irr.ps.frac[irr.ps.frac == 0] = NA
+png("figures/Irr_ps_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(irr.ps.frac, col=blues, box=F, axes=T, las=1, ylim=c(-51,90), zlim=c(0,1))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+bupu <-colorRampPalette(c(brewer.pal(n=9, name='BuPu')))(100)
+irr.pg.frac[irr.pg.frac == 0] = NA
+png("figures/Irr_pg_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(irr.pg.frac, col=bupu, box=F, axes=T, las=1, ylim=c(-51,90), zlim=c(0,1))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+greens <-colorRampPalette(c(brewer.pal(n=9, name='Greens')))(100)
+irr.pu.frac[irr.pu.frac == 0] = NA
+png("figures/Irr_pu_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(irr.pu.frac, col=greens, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
+
+ylorbr <-colorRampPalette(c(brewer.pal(n=9, name='YlOrBr')))(100)
+irr.pr.frac[irr.pr.frac == 0] = NA
+png("figures/Irr_pr_fraction.png",
+    height=8, width=12, units = 'in', res=300)
+plot(irr.pr.frac, col=ylorbr, box=F, axes=T, las=1, ylim=c(-51,90))
+plot(coastline, border='grey50', lwd=1, add=T)
+dev.off()
 
 #######################################################################################################################################
 # global figures for N-SLCT
@@ -270,3 +337,8 @@ plot(GrossIrr.pgu, add=T, col = g1, box=F, axes=T, las=1,
      legend.args=list(text='Unsust. Groundwater in irrigation (mm/year)', side=3, font=1, line=0.05, cex=0.8))
 
 dev.off()
+#################################################
+
+# transects of largest rivers
+basin.id = raster("/net/nfs/zero/data3/WBM_TrANS/data/flowdirection602_IDs.asc")
+
